@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chrono Track — 履歴</title>
+  <link rel="stylesheet" href="popup.css" />
+  <style>
+    body {
+      width: 600px;
+      max-height: none;
+      min-height: 100vh;
+    }
+
+    .history-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #ebebeb;
+    }
+
+    .history-header h1 {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .history-list {
+      padding: 12px 0;
+    }
+
+    .day-block {
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .day-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .day-header:hover {
+      background: #f7f7f7;
+    }
+
+    .day-chevron {
+      font-size: 10px;
+      color: #aaa;
+      transition: transform 0.15s;
+      flex-shrink: 0;
+    }
+
+    .day-block.open .day-chevron {
+      transform: rotate(90deg);
+    }
+
+    .day-date {
+      font-size: 13px;
+      font-weight: 700;
+      flex: 1;
+    }
+
+    .day-summary {
+      font-size: 11px;
+      color: #888;
+      display: flex;
+      gap: 12px;
+    }
+
+    .day-detail {
+      display: none;
+      background: #fafafa;
+      border-top: 1px solid #f0f0f0;
+    }
+
+    .day-block.open .day-detail {
+      display: block;
+    }
+
+    .empty-history {
+      padding: 48px 20px;
+      text-align: center;
+      color: #bbb;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="history-header">
+      <h1 class="logo">⏱ Chrono Track — 履歴</h1>
+    </header>
+
+    <div class="history-list" id="history-list">
+      <p class="empty-history">データがありません</p>
+    </div>
+  </div>
+
+  <script src="history.js"></script>
+</body>
+</html>

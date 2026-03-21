@@ -219,3 +219,13 @@ body {
 .btn-secondary:hover {
   background: #e0e0e0;
 }
+
+.btn-ghost {
+  background: transparent;
+  color: #4a90e2;
+  margin-right: auto;
+}
+
+.btn-ghost:hover {
+  background: #f0f6ff;
+}

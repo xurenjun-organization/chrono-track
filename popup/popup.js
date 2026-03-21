@@ -147,6 +147,9 @@ async function init() {
 
   document.getElementById("export-csv").addEventListener("click", exportCsv);
   document.getElementById("export-json").addEventListener("click", exportJson);
+  document.getElementById("open-history").addEventListener("click", () => {
+    browser.tabs.create({ url: browser.runtime.getURL("popup/history.html") });
+  });
 }
 
 init();
