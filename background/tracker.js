@@ -1,24 +1,51 @@
 /**
  * Chrono Track — バックグラウンドトラッキングロジック
  *
- * persistent: false のイベントページとして動作する。
- * スクリプトがアイドル時に解放されても正確に計測できるよう、
- * セッションの状態（開始時刻・URL）は storage.local に永続化する。
- *
  * カウント条件:
  *   - アクティブタブである
  *   - Firefoxウィンドウがフォーカスされている
- *   - 一時停止中でない
  * 最低記録時間: 5秒未満は破棄
- *
- * 既知の制約:
- *   スクリプトが解放されている間にフォーカス離脱が発生した場合、
- *   次のイベントまでその離脱を検知できない。
- *   そのためフォーカス外の時間が一部計上される可能性がある。
  */
 
 const MIN_RECORD_MS = 5000;
-const SESSION_KEY = "_currentSession";
+
+let currentSession = null;
+// currentSession = {
+//   url: string,
+//   title: string,
+//   startMs: number,
+//   date: string,   // "YYYY-MM-DD"
+// }
+
+let isPaused = false;
+
+async function loadPausedState() {
+  const result = await browser.storage.local.get("_isPaused");
+  isPaused = result._isPaused === true;
+}
+
+async function setPaused(value) {
+  isPaused = value;
+  await browser.storage.local.set({ _isPaused: value });
+  await browser.browserAction.setBadgeText({ text: value ? "⏸" : "" });
+}
+
+// ポップアップからのメッセージを受け取る
+browser.runtime.onMessage.addListener(async (message) => {
+  if (message.type === "GET_STATE") {
+    return { isPaused };
+  }
+  if (message.type === "SET_PAUSED") {
+    if (message.value) {
+      await flushSession();
+    } else {
+      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+      if (tab) await startSession(tab.url, tab.title);
+    }
+    await setPaused(message.value);
+    return { isPaused };
+  }
+});
 
 // ── ユーティリティ ────────────────────────────────────────
 
@@ -31,40 +58,32 @@ function isTrackable(url) {
   return url.startsWith("http://") || url.startsWith("https://");
 }
 
-// ── セッション管理（storage ベース）────────────────────────
+// ── セッション管理 ────────────────────────────────────────
 
+// startSession は必ず await して呼ぶこと
 async function startSession(url, title) {
   await flushSession();
+  if (isPaused) return;
   if (!isTrackable(url)) return;
 
-  await browser.storage.local.set({
-    [SESSION_KEY]: {
-      url,
-      title: title || url,
-      startMs: Date.now(),
-      date: today(),
-    },
-  });
+  currentSession = {
+    url,
+    title: title || url,
+    startMs: Date.now(),
+    date: today(),
+  };
 }
 
 async function flushSession() {
-  const result = await browser.storage.local.get(SESSION_KEY);
-  const session = result[SESSION_KEY];
-  if (!session) return;
+  if (!currentSession) return;
 
-  await browser.storage.local.remove(SESSION_KEY);
+  const session = currentSession;
+  currentSession = null;
 
   const elapsed = Date.now() - session.startMs;
   if (elapsed < MIN_RECORD_MS) return;
 
   await recordTime(session.date, session.url, session.title, elapsed);
-}
-
-async function updateSessionTitle(title) {
-  const result = await browser.storage.local.get(SESSION_KEY);
-  const session = result[SESSION_KEY];
-  if (!session) return;
-  await browser.storage.local.set({ [SESSION_KEY]: { ...session, title } });
 }
 
 async function recordTime(date, url, title, elapsedMs) {
@@ -81,90 +100,74 @@ async function recordTime(date, url, title, elapsedMs) {
   await browser.storage.local.set({ [date]: dayData });
 }
 
-// ── 一時停止状態（storage から毎回読む）──────────────────────
-
-async function getIsPaused() {
-  const result = await browser.storage.local.get("_isPaused");
-  return result._isPaused === true;
-}
-
 // ── イベントハンドラ ─────────────────────────────────────
 
+// タブ切り替え: activeInfo.tabId で直接タブを取得する（windows.getAll は遅延がある）
 browser.tabs.onActivated.addListener(async (activeInfo) => {
   try {
     const tab = await browser.tabs.get(activeInfo.tabId);
-    if (await getIsPaused()) {
-      await flushSession();
-      return;
-    }
     await startSession(tab.url, tab.title);
   } catch {
     await flushSession();
   }
 });
 
+// ページ読み込み完了（ナビゲーション・リロード）＆タイトル更新
 browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  // アクティブタブでなければ無視
   const [activeTab] = await browser.tabs.query({ active: true, currentWindow: true });
   if (!activeTab || activeTab.id !== tabId) return;
 
   if (changeInfo.status === "complete") {
-    if (await getIsPaused()) return;
     await startSession(tab.url, tab.title);
     return;
   }
 
-  if (changeInfo.title) {
-    await updateSessionTitle(changeInfo.title);
+  // タイトルだけ変わった場合（status: complete の後にJSでタイトルが書き換わるケース）
+  if (changeInfo.title && currentSession) {
+    currentSession.title = changeInfo.title;
   }
 });
 
+// ウィンドウフォーカス変更: tabs.query で直接アクティブタブを取得する
 browser.windows.onFocusChanged.addListener(async (windowId) => {
   if (windowId === browser.windows.WINDOW_ID_NONE) {
+    // フォーカスを失った
     await flushSession();
   } else {
-    if (await getIsPaused()) return;
+    // フォーカスを得た: windowId を指定して確実にそのウィンドウのタブを取得
     const [tab] = await browser.tabs.query({ active: true, windowId });
-    if (tab) await startSession(tab.url, tab.title);
+    if (tab) {
+      await startSession(tab.url, tab.title);
+    }
   }
 });
 
+// タブを閉じた: フラッシュするだけ（次のアクティブタブは onActivated が処理する）
 browser.tabs.onRemoved.addListener(async () => {
   await flushSession();
 });
 
-// ── メッセージハンドラ（ポップアップとの通信）────────────────
+// ── 日付変更チェック（深夜0時をまたぐ対応）────────────────
 
-browser.runtime.onMessage.addListener(async (message) => {
-  if (message.type === "GET_STATE") {
-    return { isPaused: await getIsPaused() };
+setInterval(async () => {
+  if (currentSession && currentSession.date !== today()) {
+    const { url, title } = currentSession;
+    await flushSession();
+    await startSession(url, title);
   }
-  if (message.type === "SET_PAUSED") {
-    if (message.value) {
-      await flushSession();
-    } else {
-      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-      if (tab) await startSession(tab.url, tab.title);
-    }
-    await browser.storage.local.set({ _isPaused: message.value });
-    await browser.browserAction.setBadgeText({ text: message.value ? "⏸" : "" });
-    return { isPaused: message.value };
-  }
-});
+}, 1000);
 
 // ── 初期化 ───────────────────────────────────────────────
 
 async function init() {
-  // スクリプトが解放されていた間はフォーカス状態が不明なため、
-  // 残っていたセッションは破棄して新規スタート
-  await browser.storage.local.remove(SESSION_KEY);
-
-  const paused = await getIsPaused();
-  await browser.browserAction.setBadgeText({ text: paused ? "⏸" : "" });
+  await loadPausedState();
+  await browser.browserAction.setBadgeText({ text: isPaused ? "⏸" : "" });
   await browser.browserAction.setBadgeBackgroundColor({ color: "#888888" });
 
-  if (!paused) {
-    const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-    if (tab) await startSession(tab.url, tab.title);
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  if (tab) {
+    await startSession(tab.url, tab.title);
   }
 }
 
