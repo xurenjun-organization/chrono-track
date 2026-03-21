@@ -17,6 +17,36 @@ let currentSession = null;
 //   date: string,   // "YYYY-MM-DD"
 // }
 
+let isPaused = false;
+
+async function loadPausedState() {
+  const result = await browser.storage.local.get("_isPaused");
+  isPaused = result._isPaused === true;
+}
+
+async function setPaused(value) {
+  isPaused = value;
+  await browser.storage.local.set({ _isPaused: value });
+  await browser.browserAction.setBadgeText({ text: value ? "⏸" : "" });
+}
+
+// ポップアップからのメッセージを受け取る
+browser.runtime.onMessage.addListener(async (message) => {
+  if (message.type === "GET_STATE") {
+    return { isPaused };
+  }
+  if (message.type === "SET_PAUSED") {
+    if (message.value) {
+      await flushSession();
+    } else {
+      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+      if (tab) await startSession(tab.url, tab.title);
+    }
+    await setPaused(message.value);
+    return { isPaused };
+  }
+});
+
 // ── ユーティリティ ────────────────────────────────────────
 
 function today() {
@@ -33,6 +63,7 @@ function isTrackable(url) {
 // startSession は必ず await して呼ぶこと
 async function startSession(url, title) {
   await flushSession();
+  if (isPaused) return;
   if (!isTrackable(url)) return;
 
   currentSession = {
@@ -130,6 +161,10 @@ setInterval(async () => {
 // ── 初期化 ───────────────────────────────────────────────
 
 async function init() {
+  await loadPausedState();
+  await browser.browserAction.setBadgeText({ text: isPaused ? "⏸" : "" });
+  await browser.browserAction.setBadgeBackgroundColor({ color: "#888888" });
+
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
   if (tab) {
     await startSession(tab.url, tab.title);

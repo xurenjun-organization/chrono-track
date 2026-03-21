@@ -9,9 +9,14 @@
 <body>
   <div class="container">
     <header class="header">
-      <h1 class="logo">⏱ Chrono Track</h1>
+      <div class="header-top">
+        <h1 class="logo">⏱ Chrono Track</h1>
+        <button class="toggle-btn" id="toggle-btn" title="記録の一時停止 / 再開"></button>
+      </div>
       <p class="date" id="today-date"></p>
     </header>
+
+    <div class="paused-banner" id="paused-banner">⏸ 記録を一時停止中</div>
 
     <section class="summary">
       <div class="summary-item">

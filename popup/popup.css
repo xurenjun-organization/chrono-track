@@ -28,6 +28,12 @@ body {
   border-bottom: 1px solid #ebebeb;
 }
 
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .logo {
   font-size: 15px;
   font-weight: 700;
@@ -38,6 +44,56 @@ body {
   font-size: 11px;
   color: #888;
   margin-top: 2px;
+}
+
+/* ── トグルボタン ── */
+.toggle-btn {
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s;
+  background: #4a90e2;
+  flex-shrink: 0;
+}
+
+.toggle-btn::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  top: 3px;
+  left: 23px;
+  transition: left 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.toggle-btn.paused {
+  background: #ccc;
+}
+
+.toggle-btn.paused::after {
+  left: 3px;
+}
+
+/* 一時停止中のオーバーレイ */
+.paused-banner {
+  display: none;
+  padding: 6px 16px;
+  background: #fff8e1;
+  color: #a07000;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  border-bottom: 1px solid #ffe082;
+}
+
+.paused-banner.visible {
+  display: block;
 }
 
 /* ── サマリー ── */

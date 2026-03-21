@@ -115,12 +115,35 @@ async function exportJson() {
   downloadFile(json, `chrono-track-all.json`, "application/json");
 }
 
+// ── 一時停止トグル ───────────────────────────────────────
+
+function applyPausedUI(isPaused) {
+  const btn = document.getElementById("toggle-btn");
+  const banner = document.getElementById("paused-banner");
+  btn.classList.toggle("paused", isPaused);
+  banner.classList.toggle("visible", isPaused);
+  btn.title = isPaused ? "クリックして記録を再開" : "クリックして記録を一時停止";
+}
+
 // ── 初期化 ───────────────────────────────────────────────
 
 async function init() {
   const dayData = await getTodayData();
   renderSummary(dayData);
   renderList(dayData);
+
+  // 現在の一時停止状態をバックグラウンドから取得
+  const { isPaused } = await browser.runtime.sendMessage({ type: "GET_STATE" });
+  applyPausedUI(isPaused);
+
+  document.getElementById("toggle-btn").addEventListener("click", async () => {
+    const current = document.getElementById("toggle-btn").classList.contains("paused");
+    const { isPaused: newState } = await browser.runtime.sendMessage({
+      type: "SET_PAUSED",
+      value: !current,
+    });
+    applyPausedUI(newState);
+  });
 
   document.getElementById("export-csv").addEventListener("click", exportCsv);
   document.getElementById("export-json").addEventListener("click", exportJson);
