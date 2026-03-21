@@ -81,15 +81,21 @@ browser.tabs.onActivated.addListener(async (activeInfo) => {
   }
 });
 
-// ページ読み込み完了（ナビゲーション・リロード）
+// ページ読み込み完了（ナビゲーション・リロード）＆タイトル更新
 browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  if (changeInfo.status !== "complete") return;
-
   // アクティブタブでなければ無視
   const [activeTab] = await browser.tabs.query({ active: true, currentWindow: true });
   if (!activeTab || activeTab.id !== tabId) return;
 
-  await startSession(tab.url, tab.title);
+  if (changeInfo.status === "complete") {
+    await startSession(tab.url, tab.title);
+    return;
+  }
+
+  // タイトルだけ変わった場合（status: complete の後にJSでタイトルが書き換わるケース）
+  if (changeInfo.title && currentSession) {
+    currentSession.title = changeInfo.title;
+  }
 });
 
 // ウィンドウフォーカス変更: tabs.query で直接アクティブタブを取得する
