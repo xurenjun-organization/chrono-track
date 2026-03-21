@@ -11,7 +11,7 @@
 
   "background": {
     "scripts": ["background/tracker.js"],
-    "persistent": true
+    "persistent": false
   },
 
   "browser_action": {
