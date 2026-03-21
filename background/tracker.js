@@ -8,7 +8,6 @@
  */
 
 const MIN_RECORD_MS = 5000;
-const TICK_INTERVAL_MS = 1000;
 
 let currentSession = null;
 // currentSession = {
@@ -17,8 +16,6 @@ let currentSession = null;
 //   startMs: number,
 //   date: string,   // "YYYY-MM-DD"
 // }
-
-let tickInterval = null;
 
 // ── ユーティリティ ────────────────────────────────────────
 
@@ -33,10 +30,9 @@ function isTrackable(url) {
 
 // ── セッション管理 ────────────────────────────────────────
 
-function startSession(url, title) {
-  if (currentSession) {
-    flushSession();
-  }
+// startSession は必ず await して呼ぶこと
+async function startSession(url, title) {
+  await flushSession();
   if (!isTrackable(url)) return;
 
   currentSession = {
@@ -73,96 +69,64 @@ async function recordTime(date, url, title, elapsedMs) {
   await browser.storage.local.set({ [date]: dayData });
 }
 
-// ── アクティブタブの取得 ───────────────────────────────────
-
-async function getActiveTab() {
-  const windows = await browser.windows.getAll({ populate: true });
-  for (const win of windows) {
-    if (win.focused) {
-      const activeTab = win.tabs.find((t) => t.active);
-      return activeTab || null;
-    }
-  }
-  return null;
-}
-
 // ── イベントハンドラ ─────────────────────────────────────
 
-async function onTabActivated() {
-  const tab = await getActiveTab();
-  if (tab) {
-    startSession(tab.url, tab.title);
-  } else {
-    flushSession();
+// タブ切り替え: activeInfo.tabId で直接タブを取得する（windows.getAll は遅延がある）
+browser.tabs.onActivated.addListener(async (activeInfo) => {
+  try {
+    const tab = await browser.tabs.get(activeInfo.tabId);
+    await startSession(tab.url, tab.title);
+  } catch {
+    await flushSession();
   }
-}
+});
 
-async function onTabUpdated(tabId, changeInfo, tab) {
+// ページ読み込み完了（ナビゲーション・リロード）
+browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if (changeInfo.status !== "complete") return;
 
-  const activeTab = await getActiveTab();
+  // アクティブタブでなければ無視
+  const [activeTab] = await browser.tabs.query({ active: true, currentWindow: true });
   if (!activeTab || activeTab.id !== tabId) return;
 
-  // 同じURLなら再スタートしない（リロード検知のみ訪問カウントを更新）
-  if (currentSession && currentSession.url === tab.url) {
-    // リロードとして扱い、いったんフラッシュして再スタート
-    await flushSession();
-    startSession(tab.url, tab.title);
-    return;
-  }
+  await startSession(tab.url, tab.title);
+});
 
-  startSession(tab.url, tab.title);
-}
-
-async function onWindowFocusChanged(windowId) {
+// ウィンドウフォーカス変更: tabs.query で直接アクティブタブを取得する
+browser.windows.onFocusChanged.addListener(async (windowId) => {
   if (windowId === browser.windows.WINDOW_ID_NONE) {
     // フォーカスを失った
     await flushSession();
   } else {
-    // フォーカスを得た
-    const tab = await getActiveTab();
+    // フォーカスを得た: windowId を指定して確実にそのウィンドウのタブを取得
+    const [tab] = await browser.tabs.query({ active: true, windowId });
     if (tab) {
-      startSession(tab.url, tab.title);
+      await startSession(tab.url, tab.title);
     }
   }
-}
+});
 
-async function onTabRemoved(tabId) {
-  if (!currentSession) return;
-  const activeTab = await getActiveTab();
-  // 閉じられたのがアクティブタブでなければ無視
-  if (activeTab && activeTab.id !== tabId) return;
+// タブを閉じた: フラッシュするだけ（次のアクティブタブは onActivated が処理する）
+browser.tabs.onRemoved.addListener(async () => {
   await flushSession();
-}
+});
 
 // ── 日付変更チェック（深夜0時をまたぐ対応）────────────────
 
-function startTick() {
-  if (tickInterval) clearInterval(tickInterval);
-  tickInterval = setInterval(async () => {
-    if (currentSession && currentSession.date !== today()) {
-      // 日付が変わったらいったんフラッシュして新しいセッションを開始
-      const { url, title } = currentSession;
-      await flushSession();
-      startSession(url, title);
-    }
-  }, TICK_INTERVAL_MS);
-}
+setInterval(async () => {
+  if (currentSession && currentSession.date !== today()) {
+    const { url, title } = currentSession;
+    await flushSession();
+    await startSession(url, title);
+  }
+}, 1000);
 
 // ── 初期化 ───────────────────────────────────────────────
 
 async function init() {
-  browser.tabs.onActivated.addListener(onTabActivated);
-  browser.tabs.onUpdated.addListener(onTabUpdated);
-  browser.tabs.onRemoved.addListener(onTabRemoved);
-  browser.windows.onFocusChanged.addListener(onWindowFocusChanged);
-
-  startTick();
-
-  // 起動時にアクティブタブを取得してセッション開始
-  const tab = await getActiveTab();
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
   if (tab) {
-    startSession(tab.url, tab.title);
+    await startSession(tab.url, tab.title);
   }
 }
 
