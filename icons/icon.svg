@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <circle cx="24" cy="24" r="22" fill="#4a90e2"/>
+  <circle cx="24" cy="24" r="18" fill="#ffffff"/>
+  <!-- 時計の針 -->
+  <line x1="24" y1="24" x2="24" y2="10" stroke="#4a90e2" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="24" y1="24" x2="33" y2="30" stroke="#4a90e2" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="24" cy="24" r="2" fill="#4a90e2"/>
+  <!-- 目盛り -->
+  <line x1="24" y1="7" x2="24" y2="9.5" stroke="#4a90e2" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="24" y1="38.5" x2="24" y2="41" stroke="#4a90e2" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="7" y1="24" x2="9.5" y2="24" stroke="#4a90e2" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="38.5" y1="24" x2="41" y2="24" stroke="#4a90e2" stroke-width="1.5" stroke-linecap="round"/>
+</svg>

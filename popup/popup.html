@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chrono Track</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1 class="logo">⏱ Chrono Track</h1>
+      <p class="date" id="today-date"></p>
+    </header>
+
+    <section class="summary">
+      <div class="summary-item">
+        <span class="summary-label">合計時間</span>
+        <span class="summary-value" id="total-time">—</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">訪問ページ数</span>
+        <span class="summary-value" id="total-pages">—</span>
+      </div>
+    </section>
+
+    <section class="list-section">
+      <div id="page-list" class="page-list">
+        <p class="empty-state">まだ記録がありません</p>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <button class="btn btn-secondary" id="export-csv">CSV</button>
+      <button class="btn btn-secondary" id="export-json">JSON</button>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,165 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px;
+  color: #1a1a1a;
+  background: #ffffff;
+  width: 380px;
+  min-height: 200px;
+  max-height: 560px;
+  display: flex;
+  flex-direction: column;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* ── ヘッダー ── */
+.header {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid #ebebeb;
+}
+
+.logo {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.date {
+  font-size: 11px;
+  color: #888;
+  margin-top: 2px;
+}
+
+/* ── サマリー ── */
+.summary {
+  display: flex;
+  padding: 10px 16px;
+  gap: 24px;
+  border-bottom: 1px solid #ebebeb;
+  background: #f9f9f9;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.summary-label {
+  font-size: 10px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.summary-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+/* ── ページ一覧 ── */
+.list-section {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.page-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.page-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  gap: 2px 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: default;
+}
+
+.page-item:hover {
+  background: #f7f7f7;
+}
+
+.page-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  grid-column: 1;
+}
+
+.page-time {
+  font-size: 13px;
+  font-weight: 700;
+  color: #4a90e2;
+  text-align: right;
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.page-url {
+  font-size: 10px;
+  color: #aaa;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  grid-column: 1;
+}
+
+.page-visits {
+  font-size: 10px;
+  color: #bbb;
+  text-align: right;
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.empty-state {
+  padding: 32px 16px;
+  text-align: center;
+  color: #bbb;
+  font-size: 12px;
+}
+
+/* ── フッター ── */
+.footer {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px;
+  border-top: 1px solid #ebebeb;
+  justify-content: flex-end;
+}
+
+.btn {
+  padding: 5px 14px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s;
+}
+
+.btn-secondary {
+  background: #f0f0f0;
+  color: #444;
+}
+
+.btn-secondary:hover {
+  background: #e0e0e0;
+}

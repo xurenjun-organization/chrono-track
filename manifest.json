@@ -1,0 +1,31 @@
+{
+  "manifest_version": 2,
+  "name": "Chrono Track",
+  "version": "1.0.0",
+  "description": "訪問したページと滞在時間を記録するFirefox拡張機能",
+
+  "permissions": [
+    "tabs",
+    "storage",
+    "windows"
+  ],
+
+  "background": {
+    "scripts": ["background/tracker.js"],
+    "persistent": false
+  },
+
+  "browser_action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "48": "icons/icon-48.png",
+      "96": "icons/icon-96.png"
+    },
+    "default_title": "Chrono Track"
+  },
+
+  "icons": {
+    "48": "icons/icon-48.png",
+    "96": "icons/icon-96.png"
+  }
+}
