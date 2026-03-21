@@ -124,7 +124,9 @@ browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   }
 
   // タイトルだけ変わった場合（status: complete の後にJSでタイトルが書き換わるケース）
-  if (changeInfo.title && currentSession) {
+  // tab.url が currentSession.url と一致する場合のみ更新する
+  // （別サイトへ遷移中の changeInfo.title を誤って現セッションに適用しないため）
+  if (changeInfo.title && currentSession && tab.url === currentSession.url) {
     currentSession.title = changeInfo.title;
   }
 });
