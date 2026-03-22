@@ -1,0 +1,50 @@
+# ワークフロー: Claude × GitHub Copilot 連携
+
+## 概要
+
+ClaudeとGitHub Copilot CLIを役割分担して使うことで、
+トークンコストを抑えながら品質の高い実装を実現するワークフロー。
+
+## 背景・理由
+
+- **Claude**: トークン課金 → 設計・仕様策定・レビューなど思考コストの高い作業に使う
+- **Copilot**: リクエスト数課金 → 実装・コード生成など繰り返し作業に使う
+
+## 手順
+
+### 1. Claudeで設計・仕様策定
+
+- SPEC.md に機能仕様を記載する
+- `.plan/` フォルダに実装計画（plan.md）を作成する
+  - 変更対象ファイル一覧
+  - 各ファイルの実装詳細
+  - Copilot への実装指示文（そのまま投げられる形）
+
+### 2. Copilotに実装を投げる
+
+```bash
+copilot -p "$(cat .plan/feature-xxx.md)" --allow-all
+```
+
+- `--allow-all` でファイル操作・シェル実行をすべて許可
+- Copilotが既存コードを読んだ上で実装・コミットまで行う
+
+### 3. Claudeでレビュー
+
+- 生成されたコードをClaudeがレビュー
+- バグ・仕様外の実装があれば修正
+
+## ポイント
+
+- **Planの質が精度を決める**: 変更ファイルと実装詳細が具体的なほどCopilotの出力が正確になる
+- **制約を明記する**: `browser.* API を使う（chrome.* は不可）` のような制約は必ず書く
+- **参照ファイルを明示する**: `SPEC.md を参照` `popup.js を参考に` など、Copilotが読むべきファイルを指定する
+- **コミットはCopilotに任せてもよい**: `git status` 確認 → `git add` → `git commit` まで自動でやってくれる
+
+## フォルダ構成
+
+```
+.plan/
+├── workflow-claude-copilot.md   # このファイル
+└── feature-xxx.md               # 機能ごとの実装計画 + Copilot指示文
+```
