@@ -68,6 +68,8 @@ function renderHistory(allData) {
       return `
       <div class="day-block">
         <div class="day-header">
+          <input type="checkbox" class="day-checkbox" data-date="${dateKey}"
+                 onclick="event.stopPropagation()" />
           <span class="day-chevron">▶</span>
           <span class="day-date">${formatDate(dateKey)}</span>
           <div class="day-summary">
@@ -90,11 +92,80 @@ function renderHistory(allData) {
   });
 }
 
+// ── エクスポート ─────────────────────────────────────────
+
+function downloadFile(content, filename, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function getSelectedDates() {
+  return [...document.querySelectorAll(".day-checkbox:checked")]
+    .map((cb) => cb.dataset.date);
+}
+
+function syncSelectAll() {
+  const all = document.querySelectorAll(".day-checkbox");
+  const checked = document.querySelectorAll(".day-checkbox:checked");
+  const selectAll = document.getElementById("select-all");
+  selectAll.indeterminate = checked.length > 0 && checked.length < all.length;
+  selectAll.checked = all.length > 0 && checked.length === all.length;
+}
+
+function exportSelectedCsv(allData) {
+  const dates = getSelectedDates();
+  if (dates.length === 0) return;
+
+  const rows = [["日付", "URL", "タイトル", "滞在時間(秒)", "訪問回数"]];
+  dates
+    .slice()
+    .sort()
+    .reverse()
+    .forEach((dateKey) => {
+      const dayData = allData[dateKey] || {};
+      Object.entries(dayData)
+        .sort(([, a], [, b]) => b.totalMs - a.totalMs)
+        .forEach(([url, { title, visits, totalMs }]) => {
+          rows.push([dateKey, url, title || url, Math.floor(totalMs / 1000), visits]);
+        });
+    });
+
+  const csv = rows
+    .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+
+  downloadFile("\uFEFF" + csv, "chrono-track-selected.csv", "text/csv;charset=utf-8");
+}
+
+function exportSelectedJson(allData) {
+  const dates = getSelectedDates();
+  if (dates.length === 0) return;
+
+  const selected = Object.fromEntries(dates.map((d) => [d, allData[d] || {}]));
+  downloadFile(JSON.stringify(selected, null, 2), "chrono-track-selected.json", "application/json");
+}
+
 // ── 初期化 ───────────────────────────────────────────────
 
 async function init() {
   const allData = await browser.storage.local.get(null);
   renderHistory(allData);
+
+  document.getElementById("select-all").addEventListener("change", (e) => {
+    document.querySelectorAll(".day-checkbox").forEach((cb) => (cb.checked = e.target.checked));
+  });
+
+  document.getElementById("history-list").addEventListener("change", (e) => {
+    if (e.target.classList.contains("day-checkbox")) syncSelectAll();
+  });
+
+  document.getElementById("export-csv-history").addEventListener("click", () => exportSelectedCsv(allData));
+  document.getElementById("export-json-history").addEventListener("click", () => exportSelectedJson(allData));
 }
 
 init();

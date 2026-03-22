@@ -110,9 +110,10 @@ async function exportCsv() {
 }
 
 async function exportJson() {
-  const allData = await getAllData();
-  const json = JSON.stringify(allData, null, 2);
-  downloadFile(json, `chrono-track-all.json`, "application/json");
+  const date = today();
+  const dayData = await getTodayData();
+  const json = JSON.stringify({ [date]: dayData }, null, 2);
+  downloadFile(json, `chrono-track-${date}.json`, "application/json");
 }
 
 // ── 一時停止トグル ───────────────────────────────────────

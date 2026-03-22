@@ -15,11 +15,31 @@
     .history-header {
       padding: 16px 20px;
       border-bottom: 1px solid #ebebeb;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
     }
 
     .history-header h1 {
       font-size: 16px;
       font-weight: 700;
+    }
+
+    .export-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .select-all-label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: #444;
+      cursor: pointer;
     }
 
     .history-list {
@@ -89,6 +109,13 @@
   <div class="container">
     <header class="history-header">
       <h1 class="logo">⏱ Chrono Track — 履歴</h1>
+      <div class="export-controls">
+        <label class="select-all-label">
+          <input type="checkbox" id="select-all" /> 全選択
+        </label>
+        <button class="btn btn-secondary" id="export-csv-history">CSV</button>
+        <button class="btn btn-secondary" id="export-json-history">JSON</button>
+      </div>
     </header>
 
     <div class="history-list" id="history-list">
