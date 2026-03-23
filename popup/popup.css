@@ -10,8 +10,8 @@ body {
   color: #1a1a1a;
   background: #ffffff;
   width: 380px;
-  min-height: 200px;
-  max-height: 560px;
+  height: 560px;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -20,6 +20,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
+  overflow: hidden;
 }
 
 /* ── ヘッダー ── */
